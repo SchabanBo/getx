@@ -1,10 +1,12 @@
 - [Route Management](#route-management)
-  - [How to use](#how-to-use)
   - [Navigation without named routes](#navigation-without-named-routes)
+    - [How to use](#how-to-use)
+    - [Receive Data from another screen](#receive-data-from-another-screen)
   - [Navigation with named routes](#navigation-with-named-routes)
+    - [How to use](#how-to-use-1)
     - [Send data to named Routes](#send-data-to-named-routes)
     - [Dynamic urls links](#dynamic-urls-links)
-    - [Middleware](#middleware)
+  - [Middleware](#middleware)
   - [Navigation without context](#navigation-without-context)
     - [SnackBars](#snackbars)
     - [Dialogs](#dialogs)
@@ -14,16 +16,6 @@
 # Route Management
 
 This is the complete explanation of all there is to Getx when the matter is route management.
-
-## How to use
-
-Add this to your pubspec.yaml file:
-
-```yaml
-dependencies:
-  get:
-```
-
 If you are going to use routes/snackbars/dialogs/bottomsheets without context, or use the high-level Get APIs, you need to simply add "Get" before your MaterialApp, turning it into GetMaterialApp and enjoy!
 
 ```dart
@@ -34,47 +26,59 @@ GetMaterialApp( // Before: MaterialApp(
 
 ## Navigation without named routes
 
-To navigate to a new screen:
+### How to use
+
+You can easily switch between you pages:
 
 ```dart
+/// To navigate to a new screen:
 Get.to(NextScreen());
-```
 
-To close snackbars, dialogs, bottomsheets, or anything you would normally close with Navigator.pop(context);
-
-```dart
+// To close snackbars, dialogs, bottomsheets, or anything you would normally close with Navigator pop(context);
 Get.back();
-```
 
-To go to the next screen and no option to go back to the previous screen (for use in SplashScreens, login screens and etc.)
-
-```dart
+// To go to the next screen and no option to go back to the previous screen (for use in SplashScreens, login screens and etc.)
 Get.off(NextScreen());
+
+// To go to the next screen and cancel all previous routes (useful in shopping carts, polls, and tests)
+Get.offAll(NextScreen());
+
 ```
 
-To go to the next screen and cancel all previous routes (useful in shopping carts, polls, and tests)
+**NOTE:** when yuo use this method (when you use named routes this is not necessary) you have to place the `Get.put(PageController())` in the build function in the view and not as property.
+otherwise the controller will not be initialized. [#818](https://github.com/jonataslaw/getx/issues/818)
 
 ```dart
-Get.offAll(NextScreen());
+class MyPage extends StatelessWidget {
+  MyPage({Key key}) : super(key: key);
+
+  // final Controller controller = Get.put(PageController()); THIS WILL NOT WORK
+
+  @override
+  Widget build(BuildContext context) {
+    final Controller controller = Get.put(PageController());
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('page2'),
+      ),
+    );
+  }
+}
 ```
+
+
+### Receive Data from another screen
 
 To navigate to the next route, and receive or update data as soon as you return from it:
 
 ```dart
 var data = await Get.to(Payment());
-```
 
-on other screen, send a data for previous route:
-
-```dart
+// on other screen, send a data for previous route:
 Get.back(result: 'success');
-```
 
-And use it:
-
-ex:
-
-```dart
+// And use it:
 if(data == 'success') madeAnything();
 ```
 
@@ -111,23 +115,18 @@ Get.to(HomePage());
 
 ## Navigation with named routes
 
+### How to use
+
 - If you prefer to navigate by namedRoutes, Get also supports this.
 
-To navigate to nextScreen
-
 ```dart
+// To navigate to nextScreen
 Get.toNamed("/NextScreen");
-```
 
-To navigate and remove the previous screen from the tree.
-
-```dart
+// To navigate and remove the previous screen from the tree.
 Get.offNamed("/NextScreen");
-```
 
-To navigate and remove all previous screens from the tree.
-
-```dart
+//To navigate and remove all previous screens from the tree.
 Get.offAllNamed("/NextScreen");
 ```
 
@@ -174,14 +173,11 @@ void main() {
 Just send what you want for arguments. Get accepts anything here, whether it is a String, a Map, a List, or even a class instance.
 
 ```dart
+// Send the data
 Get.toNamed("/NextScreen", arguments: 'Get is the best');
-```
 
-on your class or controller:
-
-```dart
-print(Get.arguments);
-//print out: Get is the best
+// On your class or controller receive the data
+print(Get.arguments); // =>  out: Get is the best
 ```
 
 ### Dynamic urls links
@@ -190,15 +186,10 @@ Get offer advanced dynamic urls just like on the Web. Web developers have probab
 
 ```dart
 Get.offAllNamed("/NextScreen?device=phone&id=354&name=Enzo");
-```
 
-on your controller/bloc/stateful/stateless class:
-
-```dart
-print(Get.parameters['id']);
-// out: 354
-print(Get.parameters['name']);
-// out: Enzo
+// on your controller/bloc/stateful/stateless class:
+print(Get.parameters['id']); // =>  out: 354
+print(Get.parameters['name']); // => out: Enzo
 ```
 
 You can also receive NamedParameters with Get easily:
@@ -213,42 +204,26 @@ void main() {
         name: '/',
         page: () => MyHomePage(),
       ),
-      GetPage(
-        name: '/profile/',
-        page: () => MyProfile(),
-      ),
        //You can define a different page for routes with arguments, and another without arguments, but for that you must use the slash '/' on the route that will not receive arguments as above.
        GetPage(
         name: '/profile/:user',
         page: () => UserProfile(),
       ),
-      GetPage(
-        name: '/third',
-        page: () => Third(),
-        transition: Transition.cupertino  
-      ),
      ],
     )
   );
 }
-```
 
-Send data on route name
-
-```dart
+// Send data on route name
 Get.toNamed("/profile/34954");
-```
 
-On second screen take the data by parameter
-
-```dart
-print(Get.parameters['user']);
-// out: 34954
+//On second screen take the data by parameter
+print(Get.parameters['user']); //=>  out: 34954
 ```
 
 And now, all you need to do is use Get.toNamed() to navigate your named routes, without any context (you can call your routes directly from your BLoC or Controller class), and when your app is compiled to the web, your routes will appear in the url <3
 
-### Middleware
+## Middleware
 
 If you want listen Get events to trigger actions, you can to use routingCallback to it
 
