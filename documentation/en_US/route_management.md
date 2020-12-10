@@ -1,16 +1,25 @@
 - [Route Management](#route-management)
-  - [Navigation without named routes](#navigation-without-named-routes)
+  - [Page Navigation without named routes](#page-navigation-without-named-routes)
     - [How to use](#how-to-use)
     - [Receive Data from another screen](#receive-data-from-another-screen)
-  - [Navigation with named routes](#navigation-with-named-routes)
+  - [Page Navigation with named routes](#page-navigation-with-named-routes)
     - [How to use](#how-to-use-1)
     - [Send data to named Routes](#send-data-to-named-routes)
     - [Dynamic urls links](#dynamic-urls-links)
+  - [Page Navigation Methods](#page-navigation-methods)
   - [Middleware](#middleware)
-  - [Navigation without context](#navigation-without-context)
-    - [SnackBars](#snackbars)
-    - [Dialogs](#dialogs)
-    - [BottomSheets](#bottomsheets)
+    - [Priority](#priority)
+    - [Redirect](#redirect)
+    - [onPageCalled](#onpagecalled)
+    - [OnBindingsStart](#onbindingsstart)
+    - [OnPageBuildStart](#onpagebuildstart)
+    - [OnPageBuilt](#onpagebuilt)
+    - [OnPageDispose](#onpagedispose)
+  - [Observers](#observers)
+  - [SnackBars](#snackbars)
+    - [Properties](#properties)
+  - [Dialogs](#dialogs)
+  - [BottomSheets](#bottomsheets)
   - [Nested Navigation](#nested-navigation)
 
 # Route Management
@@ -24,7 +33,7 @@ GetMaterialApp( // Before: MaterialApp(
 )
 ```
 
-## Navigation without named routes
+## Page Navigation without named routes
 
 ### How to use
 
@@ -66,7 +75,6 @@ class MyPage extends StatelessWidget {
   }
 }
 ```
-
 
 ### Receive Data from another screen
 
@@ -113,7 +121,7 @@ Get.to(HomePage());
 
 ```
 
-## Navigation with named routes
+## Page Navigation with named routes
 
 ### How to use
 
@@ -223,7 +231,103 @@ print(Get.parameters['user']); //=>  out: 34954
 
 And now, all you need to do is use Get.toNamed() to navigate your named routes, without any context (you can call your routes directly from your BLoC or Controller class), and when your app is compiled to the web, your routes will appear in the url <3
 
+## Page Navigation Methods
+
+| Method                                                                                                                      | Need           | Method in Navigator                        | Descriptions                                                                                                                   |
+| --------------------------------------------------------------------------------------------------------------------------- | -------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| [Get.to()](https://github.com/jonataslaw/getx/blob/master/lib/get_navigation/src/extension_navigation.dart#L473)            | Widget         | Navigation.push()                          | Pushes a new (Widget) page to the stack                                                                                        |
+| [Get.until()        ](https://github.com/jonataslaw/getx/blob/master/lib/get_navigation/src/extension_navigation.dart#L580) | -              | Navigation.popUntil()                      | Calls pop several times in the stack until `predicate` returns true                                                            |
+| [Get.toNamed()      ](https://github.com/jonataslaw/getx/blob/master/lib/get_navigation/src/extension_navigation.dart#L525) | String         | Navigation.pushNamed()                     | Pushes a new named page to the stack.                                                                                          |
+| [Get.offNamed()     ](https://github.com/jonataslaw/getx/blob/master/lib/get_navigation/src/extension_navigation.dart#L553) | String         | Navigation.pushReplacementNamed()          | Pop the current named page in the stack and push a new one in its place                                                        |
+| [Get.offUntil()     ](https://github.com/jonataslaw/getx/blob/master/lib/get_navigation/src/extension_navigation.dart#L604) | Route<Dynamic> | Navigation.pushAndRemoveUntil()            | Push the given page, and then pop several pages in the stack until `predicate` returns true                                    |
+| [Get.offNamedUntil()](https://github.com/jonataslaw/getx/blob/master/lib/get_navigation/src/extension_navigation.dart#L628) | String         | Navigation.pushNamedAndRemoveUntil()       | Push the given named page, and then pop several pages in the stack until `predicate` returns true                              |
+| [Get.offAndToNamed()](https://github.com/jonataslaw/getx/blob/master/lib/get_navigation/src/extension_navigation.dart#L650) | String         | Navigation.popAndPushNamed()               | Pop the current named page and pushes a new page to the stack in its place                                                     |
+| [Get.removeRoute()  ](https://github.com/jonataslaw/getx/blob/master/lib/get_navigation/src/extension_navigation.dart#L667) | Route<Dynamic> | Navigation.removeRoute()                   | Remove a specific route from the stack                                                                                         |
+| [Get.offAllNamed()  ](https://github.com/jonataslaw/getx/blob/master/lib/get_navigation/src/extension_navigation.dart#L691) | String         | Navigation.pushNamedAndRemoveUntil()       | Push a named page and pop several pages in the stack until `predicate` returns true. predicate` is optional                    |
+| [Get.back()         ](https://github.com/jonataslaw/getx/blob/master/lib/get_navigation/src/extension_navigation.dart#L724) | -              | Navigation?.popUntil() or Navigation.pop() | if your set `closeOverlays` to true, Get.back() will close the currently open snackbar/dialog/bottomsheet AND the current page |
+| [Get.close()        ](https://github.com/jonataslaw/getx/blob/master/lib/get_navigation/src/extension_navigation.dart#L750) | -              | Navigation.popUntil()                      | Close as many routes as defined by `times`                                                                                     |
+| [Get.off()          ](https://github.com/jonataslaw/getx/blob/master/lib/get_navigation/src/extension_navigation.dart#L785) | Widget         | Navigation.pushReplacement()               | Pop the current page and pushes a new page to the stack                                                                        |
+| [Get.offAll()       ](https://github.com/jonataslaw/getx/blob/master/lib/get_navigation/src/extension_navigation.dart#L846) | Widget         | Navigation.pushAndRemoveUntil()            | Push a named page and pop several pages in the stack until `predicate` returns true. predicate` is optional                    |
+
 ## Middleware
+
+The GetPage has now new property that takes a list of GetMiddleWare and run them in the specific order.
+
+**Note**: When GetPage has a Middlewares, all the children of this page will have the same middlewares automatically.
+
+### Priority
+
+The Order of the Middlewares to run can pe set by the priority in the GetMiddleware.
+
+```dart
+final middlewares = [
+  GetMiddleware(priority: 2),
+  GetMiddleware(priority: 5),
+  GetMiddleware(priority: 4),
+  GetMiddleware(priority: -8),
+];
+```
+those middlewares will be run in this order **-8 => 2 => 4 => 5**
+
+### Redirect
+
+This function will be called when the page of the called route is being searched for. It takes RouteSettings as a result to redirect to. Or give it null and there will be no redirecting.
+
+```dart
+GetPage redirect( ) {
+  final authService = Get.find<AuthService>();
+  return authService.authed.value ? null : RouteSettings(name: '/login')
+}
+```
+
+### onPageCalled
+
+This function will be called when this Page is called before anything created
+you can use it to change something about the page or give it new page
+
+```dart
+GetPage onPageCalled(GetPage page) {
+  final authService = Get.find<AuthService>();
+  return page.copyWith(title: 'Welcome ${authService.UserName}');
+}
+```
+
+### OnBindingsStart
+
+This function will be called right before the Bindings are initialize.
+Here you can change Bindings for this page.
+
+```dart
+List<Bindings> onBindingsStart(List<Bindings> bindings) {
+  final authService = Get.find<AuthService>();
+  if (authService.isAdmin) {
+    bindings.add(AdminBinding());
+  }
+  return bindings;
+}
+```
+
+### OnPageBuildStart
+
+This function will be called right after the Bindings are initialize.
+Here you can do something after that you created the bindings and before creating the page widget.
+
+```dart
+GetPageBuilder onPageBuildStart(GetPageBuilder page) {
+  print('bindings are ready');
+  return page;
+}
+```
+
+### OnPageBuilt
+
+This function will be called right after the GetPage.page function is called and will give you the result of the function. and take the widget that will be showed.
+
+### OnPageDispose
+
+This function will be called right after disposing all the related objects (Controllers, views, ...) of the page.
+
+## Observers
 
 If you want listen Get events to trigger actions, you can to use routingCallback to it
 
@@ -252,11 +356,8 @@ void main() {
     ),
   );
 }
-```
 
-Create a MiddleWare class
-
-```dart
+//Create a MiddleWare class
 class MiddleWare {
   static observer(Routing routing) {
     /// You can listen in addition to the routes, the snackbars, dialogs and bottomsheets on each screen.
@@ -344,9 +445,7 @@ class Third extends StatelessWidget {
 }
 ```
 
-## Navigation without context
-
-### SnackBars
+## SnackBars
 
 To have a simple SnackBar with Flutter, you must get the context of Scaffold, or you must use a GlobalKey attached to your Scaffold
 
@@ -358,6 +457,7 @@ final snackBar = SnackBar(
     onPressed: (){}
   ),
 );
+
 // Find the Scaffold in the widget tree and use
 // it to show a SnackBar.
 Scaffold.of(context).showSnackBar(snackBar);
@@ -382,49 +482,50 @@ Get.snackbar(
   isDismissible: true,
   duration: Duration(seconds: 3),
 );
-
-
-  ////////// ALL FEATURES //////////
-  //     Color colorText,
-  //     Duration duration,
-  //     SnackPosition snackPosition,
-  //     Widget titleText,
-  //     Widget messageText,
-  //     bool instantInit,
-  //     Widget icon,
-  //     bool shouldIconPulse,
-  //     double maxWidth,
-  //     EdgeInsets margin,
-  //     EdgeInsets padding,
-  //     double borderRadius,
-  //     Color borderColor,
-  //     double borderWidth,
-  //     Color backgroundColor,
-  //     Color leftBarIndicatorColor,
-  //     List<BoxShadow> boxShadows,
-  //     Gradient backgroundGradient,
-  //     FlatButton mainButton,
-  //     OnTap onTap,
-  //     bool isDismissible,
-  //     bool showProgressIndicator,
-  //     AnimationController progressIndicatorController,
-  //     Color progressIndicatorBackgroundColor,
-  //     Animation<Color> progressIndicatorValueColor,
-  //     SnackStyle snackStyle,
-  //     Curve forwardAnimationCurve,
-  //     Curve reverseAnimationCurve,
-  //     Duration animationDuration,
-  //     double barBlur,
-  //     double overlayBlur,
-  //     Color overlayColor,
-  //     Form userInputForm
-  ///////////////////////////////////
 ```
+
+### Properties
+
+| Property                         | Type                            | Description                                                                                                                                                                                                                                                     |
+| -------------------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| snackbarStatus                   | Function(SnackbarStatus status) | A callback for you to listen to the different Snack status                                                                                                                                                                                                      |
+| title                            | String                          | The title displayed to the user                                                                                                                                                                                                                                 |
+| message                          | String                          | The message displayed to the user.                                                                                                                                                                                                                              |
+| titleText                        | Widget                          | Replaces `title`. Although this accepts a `Widget`, it is meant to receive `text` or `RichText`                                                                                                                                                                 |
+| messageText                      | Widget                          | Replaces `message`. Although this accepts a `Widget`, it is meant to receive `text` or `RichText`                                                                                                                                                               |
+| backgroundColor                  | Color                           | Will be ignored if `backgroundGradient` is not null                                                                                                                                                                                                             |
+| leftBarIndicatorColor            | Color                           | If not null, shows a left vertical colored bar on notification. It is not possible to use it with a `Form` and I do not recommend using it with `LinearProgressIndicator`                                                                                       |
+| boxShadows                       | List<BoxShadow>                 | `boxShadows` The shadows generated by Snack. Leave it null if you don't want a shadow. You can use more than one if you feel the need. Check [this example](https://github.com/flutter/flutter/blob/master/packages/flutter/lib/src/material/shadows.dart)      |
+| backgroundGradient               | Gradient                        | Makes `backgroundColor` be ignored                                                                                                                                                                                                                              |
+| icon                             | Widget                          | You can use any widget here, but I recommend `Icon` or `Image` as indication of  kind of message you are displaying. Other widgets may break the layout                                                                                                         |
+| shouldIconPulse                  | bool                            | An option to animate the icon (if present). Defaults to true.                                                                                                                                                                                                   |
+| maxWidth                         | double                          | Used to limit Snack width (usually on large screens)                                                                                                                                                                                                            |
+| margin                           | EdgeInsets                      | Adds a custom margin to Snack                                                                                                                                                                                                                                   |
+| padding                          | EdgeInsets                      | Adds a custom padding to Snack The default follows material design guide line                                                                                                                                                                                   |
+| borderRadius                     | double                          | Adds a radius to all corners of Snack. Best combined with `margin`. I do not recommend using it with `showProgressIndicator` or `leftBarIndicatorColor`.                                                                                                        |
+| borderColor                      | Color                           | Adds a border to every side of Snack I do not recommend using it with `showProgressIndicator` or `leftBarIndicatorColor`                                                                                                                                        |
+| borderWidth                      | double                          | Changes the width of the border if `borderColor` is specified                                                                                                                                                                                                   |
+| mainButton                       | FlatButton                      | A `FlatButton` widget if you need an action from the user.                                                                                                                                                                                                      |
+| onTap                            | OnTap                           | A callback that registers the user's click anywhere. An alternative to `mainButton`                                                                                                                                                                             |
+| isDismissible                    | bool                            | Determines if the user can swipe or click the overlay (if `overlayBlur` > 0) to dismiss. It is recommended that you set `duration` != null if this is false. If the user swipes to dismiss or clicks the overlay, no value will be returned.                    |
+| showProgressIndicator            | bool                            | True if you want to show a `LinearProgressIndicator`                                                                                                                                                                                                            |
+| progressIndicatorController      | AnimationController             | An optional `AnimationController` when you to control the progress of your `LinearProgressIndicator`                                                                                                                                                            |
+| progressIndicatorBackgroundColor | Color                           | A `LinearProgressIndicator` configuration parameter                                                                                                                                                                                                             |
+| progressIndicatorValueColor      | Animation<Color>                | A `LinearProgressIndicator` configuration parameter.                                                                                                                                                                                                            |
+| snackStyle                       | SnackStyle                      | Snack can be floating or be grounded to the edge of the screen. If grounded, I do not recommend using `margin` or `borderRadius`. `SnackStyle.FLOATING` is the default If grounded, I do not recommend using a `backgroundColor` with transparency or `barBlur` |
+| forwardAnimationCurve            | Curve                           | The `Curve` animation used when show() is called.`Curves.easeOut` is default                                                                                                                                                                                    |
+| reverseAnimationCurve            | Curve                           | The `Curve` animation used when dismiss() is called. `Curves.fastOutSlowIn` is default                                                                                                                                                                          |
+| animationDuration                | Duration                        | Use it to speed up or slow down the animation duration                                                                                                                                                                                                          |
+| barBlur                          | double                          | Default is 0.0. If different than 0.0, blurs only Snack's background. To take effect, make sure your `backgroundColor` has some opacity. The greater the value, the greater the blur.                                                                           |
+| overlayBlur                      | double                          | Default is 0.0. If different than 0.0, creates a blurred overlay that prevents the user from interacting with the screen. The greater the value, the greater the blur.                                                                                          |
+| overlayColor                     | Color                           | Default is `Colors.transparent`. Only takes effect if `overlayBlur` > 0.0. Make sure you use a color with transparency here e.g. Colors.grey`600`.withOpacity(0.2).                                                                                             |  
+| userInputForm                    | Form                            | A `TextFormField` in case you want a simple user input. Every other widget is ignored if this is not null.                                                                                                                                                     |
+
 
 If you prefer the traditional snackbar, or want to customize it from scratch, including adding just one line (Get.snackbar makes use of a mandatory title and message), you can use
 `Get.rawSnackbar();` which provides the RAW API on which Get.snackbar was built.
 
-### Dialogs
+## Dialogs
 
 To open dialog:
 
@@ -447,7 +548,7 @@ For all other Flutter dialog widgets, including cupertinos, you can use Get.over
 For widgets that don't use Overlay, you can use Get.context.
 These two contexts will work in 99% of cases to replace the context of your UI, except for cases where inheritedWidget is used without a navigation context.
 
-### BottomSheets
+## BottomSheets
 
 Get.bottomSheet is like showModalBottomSheet, but don't need of context.
 
